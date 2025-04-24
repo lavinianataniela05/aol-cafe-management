@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Customer {
+  id           Int           @id @default(autoincrement())
+  createdAt    DateTime      @default(now())
+  nama         String
+  email        String        @unique
+  noTelp       String
+  reservations Reservation[]
+}
+
+model Reservation {
+  id              Int       @id @default(autoincrement())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  isCancelled     Boolean   @default(false)
+  status          String
+  reservationDate DateTime
+  reservationTime DateTime
+  cancelledAt     DateTime?
+  customer        Customer  @relation(fields: [customerId], references: [id])
+  customerId      Int
+  tables          Table[]
+  orders          Order[]
+}
+
+model Table {
+  id           Int           @id @default(autoincrement())
+  capacity     Int
+  status       String
+  reservations Reservation[]
+}
+
+model Staff {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  name      String
+  role      Role     @default(USER)
+  orders    Order[]
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  staff         Staff       @relation(fields: [staffId], references: [id])
+  staffId       Int
+  reservation   Reservation @relation(fields: [reservationId], references: [id])
+  reservationId Int
+  menuOrders    MenuOrder[]
+}
+
+model Menu {
+  id         Int         @id @default(autoincrement())
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  price      Float
+  itemType   String
+  itemName   String      @db.VarChar(255)
+  menuOrders MenuOrder[]
+}
+
+model MenuOrder {
+  order     Order    @relation(fields: [orderId], references: [id])
+  orderId   Int
+  menu      Menu     @relation(fields: [menuId], references: [id])
+  menuId    Int
+  quantity  Int
+  createdAt DateTime @default(now())
+
+  @@id([orderId, menuId])
+}
+
+enum Role {
+  USER
+  ADMIN
+}
